@@ -1,0 +1,233 @@
+---
+title: Cristian dos Santos Ramthun
+format: html
+editor: visual
+---
+
+```{r}
+#| label: load-packages
+#| include: false
+
+library(tidyverse)
+library(WDI)
+
+options(scipen = 999) # REMOVER A NOT. CIENT.
+# DADOS EM PAINEL
+rendanacional <- WDI(country = 'all',
+              indicator = 'NY.ADJ.NNTY.KD.ZG')
+
+paises <- c('BR', 'US')
+
+rendanacionalBRUS <- WDI(country = paises,
+                  indicator = 'NY.ADJ.NNTY.KD.ZG')
+
+# CORTE TRANSVERSAL
+rendanacional2021 <- WDI(country = 'all',
+                  indicator = 'NY.ADJ.NNTY.KD.ZG',
+                  start = 2021, end = 2021)
+
+# SÉRIE TEMPORAL
+rendanacionalBR <- WDI(country = 'BR',
+                indicator = 'NY.ADJ.NNTY.KD.ZG')
+```
+
+## Renda nacional líquida ajustada per capita
+
+O conceito de renda nacional líquida ajustada per capita oferece uma visão mais abrangente do desenvolvimento econômico de um país, indo além das métricas tradicionais como o PIB e a Renda Nacional Bruta (RNB)
+
+- A renda nacional líquida ajustada desconta o consumo de capital fixo e o esgotamento dos recursos naturais da RNB, fornecendo um indicador mais sustentável da riqueza de um país.
+
+- Esse indicador é particularmente relevante para países com grande dependência de recursos naturais, como economias da África Subsaariana. Ele mostra como o esgotamento dos ativos naturais pode comprometer a capacidade de consumo futuro e afetar padrões de vida.
+
+- Muitas vezes, o PIB ignora externalidades ambientais e desgastes de capital fixo. Comparar esses indicadores revela diferenças importantes sobre a sustentabilidade do crescimento econômico.
+
+-Não contabiliza investimentos em capital humano ou impactos da poluição, focando apenas nos aspectos físicos dos ativos nacionais.
+
+
+## GRÁFICO DE DADOS EM PAINEL
+
+Este gráfico mostra o crescimento ajustado da renda nacional de vários países ao longo do tempo.
+
+- O Brasil está destacado em vermelho, enquanto os demais países aparecem em azul. Isso facilita a comparação entre a trajetória econômica brasileira e o desempenho global.
+
+- A dispersão dos pontos indica a variação da renda nacional de diferentes países ao longo dos anos. Caso o Brasil apresente flutuações mais intensas, isso pode estar relacionado a crises econômicas ou mudanças de política interna.
+
+- O segundo gráfico inclui um limite no eixo Y (-100 a 100%), permitindo observar oscilações extremas sem distorcer a escala.
+
+
+```{r}
+#| label: graficodadosempainel
+#| warning: false
+#| echo: false
+
+library(ggplot2)
+library(dplyr)
+library(plotly)
+
+rendanacional <- rendanacional %>%
+  mutate(destaque = ifelse(country == "Brazil", "Brasil", "Outros"))
+
+# Criando o gráfico com dois geom_point()
+ggplot() +
+  geom_point(data = rendanacional, aes(x = year, y = NY.ADJ.NNTY.KD.ZG), 
+             color = "blue", alpha = 0.5, size = 1.2) +  # Todos os países em azul
+  geom_point(data = filter(rendanacional, country == "Brazil"), 
+             aes(x = year, y = NY.ADJ.NNTY.KD.ZG), 
+             color = "red", size = 1.2, shape = 17) +  # Brasil em vermelho e formato diferente
+  labs(title = "Crescimento Ajustado da Renda Nacional",
+       x = "Ano",
+       y = "Variação (%)") +
+  theme_minimal()
+
+```
+-----------------------------------------------------------------
+```{r}
+#| label: graficodadosempainelzoom
+#| warning: false
+#| echo: false
+
+
+library(ggplot2)
+library(dplyr)
+library(plotly)
+
+rendanacional <- rendanacional %>%
+  mutate(destaque = ifelse(country == "Brazil", "Brasil", "Outros"))
+
+# Criando o gráfico com dois geom_point() e limite de eixo Y
+ggplot() +
+  geom_point(data = rendanacional, aes(x = year, y = NY.ADJ.NNTY.KD.ZG), 
+             color = "blue", alpha = 0.5, size = 1.2) +  # Todos os países em azul
+  geom_point(data = filter(rendanacional, country == "Brazil"), 
+             aes(x = year, y = NY.ADJ.NNTY.KD.ZG), 
+             color = "red", size = 1.2, shape = 17) +  # Brasil em vermelho e formato diferente
+  labs(title = "Crescimento Ajustado da Renda Nacional (Zoom)",
+       x = "Ano",
+       y = "Variação (%)") +
+  ylim(-100, 100) +  # Ajuste do eixo Y
+  theme_minimal()
+```
+
+## GRÁFICO DE DADOS DE CORTE TRANSVERSAL
+
+Este gráfico analisa apenas o ano de 2021, comparando a renda nacional entre diversos países.
+
+- O Brasil aparece destacado em vermelho, enquanto os outros países estão em preto. Isso ajuda a visualizar sua posição relativa dentro do cenário internacional.
+
+- Se o Brasil estiver abaixo da maioria dos países, pode indicar uma recuperação econômica mais lenta ou impacto de fatores externos, como crises globais.
+
+- Se estiver acima, pode sugerir um crescimento econômico superior à média mundial naquele período.
+
+
+```{r}
+#| label: graficocortetransversal 
+#| warning: false 
+#| echo: false  
+
+library(ggplot2)
+library(dplyr)
+
+# Filtrar apenas o ano de 2021 e remover valores 0 ou N/A
+rendanacional2021 <- rendanacional2021 %>%
+  filter(year == 2021, !is.na(NY.ADJ.NNTY.KD.ZG), NY.ADJ.NNTY.KD.ZG != 0) %>%
+  mutate(color = ifelse(country == "Brazil", "red", "black"))  # Brasil em vermelho, demais países em preto
+
+# Criar gráfico de barras sem países de valor 0 ou N/A
+ggplot(rendanacional2021, 
+       aes(x = reorder(country, NY.ADJ.NNTY.KD.ZG), 
+           y = NY.ADJ.NNTY.KD.ZG, 
+           fill = color)) +
+  geom_col(alpha = 0.8) +  
+  labs(title = "Renda Nacional Ajustada em 2021",
+       x = "País",
+       y = "PIB Ajustado (%)") +
+  scale_fill_identity() +  
+  coord_flip() +  
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold", color = "black"),
+    axis.title.x = element_text(face = "bold", color = "black"),
+    axis.title.y = element_text(face = "bold", color = "black"),
+    axis.text.y = element_blank(),  # Remove os nomes dos países
+    legend.position = "none"
+  )
+```
+----------------------------------------------------------------
+```{r}
+#| label: graficocortetransversalzoom 
+#| warning: false 
+#| echo: false  
+
+library(ggplot2)
+library(dplyr)
+
+# Filtrar apenas o ano de 2021 e remover valores 0 ou N/A
+rendanacional2021 <- rendanacional2021 %>%
+  filter(year == 2021, !is.na(NY.ADJ.NNTY.KD.ZG), NY.ADJ.NNTY.KD.ZG != 0) %>%
+  arrange(desc(NY.ADJ.NNTY.KD.ZG))  # Ordenar do maior para o menor
+
+# Identificar o valor da renda nacional do Brasil
+valor_brasil <- rendanacional2021 %>%
+  filter(country == "Brazil") %>%
+  pull(NY.ADJ.NNTY.KD.ZG)
+
+# Selecionar os 10 maiores e 10 menores países em relação ao Brasil
+rendanacional2021_filtrado <- rendanacional2021 %>%
+  filter(NY.ADJ.NNTY.KD.ZG > valor_brasil) %>%
+  slice_head(n = 10) %>%
+  bind_rows(rendanacional2021 %>%
+              filter(country == "Brazil")) %>%  # Adiciona explicitamente o Brasil
+  bind_rows(rendanacional2021 %>%
+              filter(NY.ADJ.NNTY.KD.ZG < valor_brasil) %>%
+              slice_tail(n = 10)) %>%
+  mutate(color = ifelse(country == "Brazil", "red", "black"))  # Brasil em vermelho, demais países em preto
+
+# Criar gráfico de barras ajustado
+ggplot(rendanacional2021_filtrado, 
+       aes(x = reorder(country, NY.ADJ.NNTY.KD.ZG), 
+           y = NY.ADJ.NNTY.KD.ZG, 
+           fill = color)) +
+  geom_col(alpha = 0.8) +  
+  labs(title = "Renda Nacional Ajustada em 2021 (Zoom)",
+       x = "País",
+       y = "PIB Ajustado (%)") +
+  scale_fill_identity() +  
+  coord_flip() +  
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold", color = "black"),
+    axis.title.x = element_text(face = "bold", color = "black"),
+    axis.title.y = element_text(face = "bold", color = "black"),
+    legend.position = "none"
+  )
+```
+
+
+## GRÁFICO DE DADOS DE SÉRIE TEMPORAL
+
+Este gráfico traça a evolução da renda nacional do Brasil, facilitando a análise de tendências ao longo dos anos. Se houver oscilações bruscas, pode indicar períodos de crise ou crescimento econômico acelerado.
+
+- Linha vermelha permite análisar a trajetória do Brasil no decorrer dos anos. 
+
+- Quando analisamos que a linha vermelha tem quedas bruscas, pode indicar possíveis crises.
+
+- Se a linha estiver em alta, significa expansão econômica e melhora nos indicadores nacionais.
+
+-  Pode mostrar repetições de tendências, indicando sazonalidade ou efeitos de políticas econômicas ao longo dos anos.
+
+
+```{r}
+#| label: graficoserietemporal 
+#| warning: false  
+#| echo: false    
+
+library(ggplot2)
+
+ggplot(rendanacionalBR, 
+       aes(y = NY.ADJ.NNTY.KD.ZG, x = year)) +
+  geom_line(color = "red", size = 1) +  # Linha vermelha com largura 1
+  labs(title = "Evolução da Renda do Brasil ao Longo dos Anos",
+       x = "Anos",
+       y = "Variação (%)") +
+  theme_minimal()  # Estilo limpo e moderno
+```
