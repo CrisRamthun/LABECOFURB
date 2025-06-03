@@ -1,0 +1,93 @@
+---
+title: "Cristian Ramthun"
+format: html
+editor: visual
+---
+
+## Renda disponível Famílias
+
+O gráfico Renda Disponível das Famílias - Evolução Anual mostra a variação da renda disponível ao longo do tempo, destacando como fatores econômicos podem influenciar o orçamento das famílias brasileiras.
+
+## Análise Detalhada do Gráfico
+
+1.  **Crescimento e redução da renda disponível:**\
+    -   Em determinados períodos, o gráfico apresenta **picos de crescimento**, indicando momentos de **expansão econômica**, aumento dos salários e maior poder de compra das famílias.\
+    -   Por outro lado, também há **quedas significativas**, que podem ser associadas a **inflação elevada**, aumento do endividamento e juros altos.
+2.  **Impacto de políticas econômicas:**\
+    -   **Reduções na taxa Selic** podem aumentar o acesso ao crédito, incentivando o consumo e impulsionando o crescimento da renda disponível.\
+    -   **Aumento dos impostos ou corte de benefícios sociais** podem impactar negativamente o orçamento das famílias, reduzindo sua capacidade de consumo.
+3.  **Exemplo prático:**\
+    -   Durante os anos em que **o governo implementou programas de transferência de renda**, como o auxílio emergencial e políticas de subsídios, houve um aumento significativo na renda disponível das famílias. Esse efeito pode ser visto como períodos de alta no gráfico.\
+    -   Por outro lado, momentos de crise financeira e aumento da inflação podem ser identificados pelas **quedas no gráfico**, refletindo a perda de poder de compra.
+4.  **Tendências futuras:**\
+    -   O comportamento da renda disponível pode servir como um **indicador de consumo**, auxiliando economistas e investidores a preverem cenários futuros para o mercado financeiro.\
+    -   Se houver um aumento contínuo da renda disponível, isso pode indicar um **período de crescimento econômico** e maior confiança dos consumidores.\
+    -   Caso a renda disponível diminua, pode sinalizar **maior endividamento das famílias**, inflação elevada e necessidade de medidas econômicas para equilibrar o orçamento.
+
+O gráfico, portanto, é uma ferramenta essencial para compreender os padrões econômicos que afetam diretamente a vida da população.
+
+```{r}
+#| include: false
+
+library(GetBCBData)
+library(tidyverse)
+library(gganimate)
+library(gifski)
+library(transformr)
+library(png)
+library(ragg)
+library(lubridate)
+library(scales)
+
+
+# ID da série
+my.id <- 29023
+
+# Obtendo os dados sem exibir mensagens na execução
+df.bcb <- suppressWarnings(suppressMessages(gbcbd_get_series(
+  id = my.id, 
+  first.date = '2003-03-01',
+  format.data = 'long',
+  use.memoise = TRUE, 
+  cache.path = tempdir(), 
+  do.parallel = FALSE
+)))
+
+# Criando o gráfico animado com linha azul simples e eixo Y ajustado
+grafico <- ggplot(df.bcb, aes(x = ref.date, y = value / 1e6, group = 1)) + 
+  geom_line(color = "blue", linewidth = 1.5) + 
+  labs(
+    title = "Renda Disponível das Famílias - Evolução Anual",
+    subtitle = "Impacto dos fatores econômicos sobre o orçamento familiar",
+    x = NULL,
+    y = "Valores em Milhões de Reais"
+  ) + 
+  scale_y_continuous(labels = scales::label_number(prefix = "R$ ", big.mark = ".", decimal.mark = ",")) + 
+  theme_minimal() + 
+  theme(
+    plot.title = element_text(size = 20, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 35, hjust = 1)
+  ) + 
+  transition_reveal(ref.date)
+
+# Criando e salvando a animação sem exibir mensagens de execução
+anim <- suppressWarnings(suppressMessages(animate(
+  grafico,
+  width = 1920,
+  height = 1080,
+  units = "px",
+  res = 150,
+  duration = 10,
+  renderer = gifski_renderer(),
+  dev = "ragg_png"
+)))
+
+```
+
+```{r}
+#| echo: false
+grafico
+```
